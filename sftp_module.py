@@ -10,17 +10,18 @@ def connect(ftp_user, ftp_password, ftp_host):
     return sftp
 
 
-def get_size(sftp):
-    path = "MANO_DVM_Release_10.1_rc004_6.tar.gz"
-    sftp.cwd('/Corp/SandboxBS.Builds/Release/product/prod.inmrnd.mano/deployment-vm/release_10.1_20190131-102258/generic1.0/')
-    size = sftp.sftp_client.stat(path)
+def get_size(sftp, ftp_dvm_path):
+    size = sftp.sftp_client.stat(ftp_dvm_path)
     return size.st_size
 
 
-def get_file(sftp):
-    path = "MANO_DVM_Release_10.1_rc004_6.tar.gz"
-    sftp.cwd('/Corp/SandboxBS.Builds/Release/product/prod.inmrnd.mano/deployment-vm/release_10.1_20190131-102258/generic1.0/')
-    result = sftp.sftp_client.get(path, "/tmp")
+def get_file(sftp, ftp_dvm_path, temp_dir):
+    file = ftp_dvm_path.split("/")
+    if temp_dir[-1] == "/":
+        temp_dir += file[-1]
+    else:
+        temp_dir = temp_dir + "/" + file[-1]
+    result = sftp.sftp_client.get(ftp_dvm_path, temp_dir)
     return result
 
 
@@ -31,26 +32,28 @@ def main():
         ftp_password=dict(required=True, type='str'),
         ftp_host=dict(required=True, type='str'),
         ftp_dvm_path=dict(required=True, type='str'),
+        temp_dir=dict(required=False, type='str'),
         action=dict(required=True, type='str')
     ),
     supports_check_mode=True
   )
   if module.check_mode:
-     return result
+     module.exit_json(changed=False)
 
   ftp_host = module.params['ftp_host']
   ftp_dvm_path = module.params['ftp_dvm_path']
   ftp_user = module.params['ftp_user']
   ftp_password = module.params['ftp_password']
   action = module.params['action']
+  temp_dir = module.params['temp_dir']
 
   if action == "get":
       sftp = connect(ftp_user, ftp_password, ftp_host)
-      result = get_file(sftp)
+      result = get_file(sftp, ftp_dvm_path, temp_dir)
       module.exit_json(changed=False, msg=result)
   elif action == "size":
       sftp = connect(ftp_user, ftp_password, ftp_host)
-      result = get_size(sftp)
+      result = get_size(sftp, ftp_dvm_path)
       module.exit_json(changed=False, size=result)
   else:
       msg = "No set action"
