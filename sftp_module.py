@@ -28,8 +28,8 @@ def get_file(sftp, ftp_dvm_path, temp_dir):
 def main():
   module = AnsibleModule(
     argument_spec=dict(
-        ftp_user=dict(required=True, type='str'),
-        ftp_password=dict(required=True, type='str'),
+        ftp_user=dict(required=True, type='str',  no_log=True),
+        ftp_password=dict(required=True, type='str', no_log=True),
         ftp_host=dict(required=True, type='str'),
         ftp_dvm_path=dict(required=True, type='str'),
         temp_dir=dict(required=False, type='str'),
