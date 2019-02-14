@@ -1,7 +1,8 @@
 #!/usr/bin/python
 from ansible.module_utils.basic import *
 import pysftp
-
+import subprocess
+import os
 
 def connect(ftp_user, ftp_password, ftp_host):
     cnopts = pysftp.CnOpts()
@@ -9,6 +10,12 @@ def connect(ftp_user, ftp_password, ftp_host):
     sftp = pysftp.Connection(host=ftp_host, username=ftp_user, password=ftp_password, cnopts=cnopts)
     sftp.timeout = 3600
     return sftp
+
+
+def get_file_lftp(ftp_user, ftp_password, ftp_host, ftp_dvm_path, temp_dir):
+    command = "lftp sftp://" + ftp_user + ":" + ftp_password + "@" + ftp_host + " -e " + "'get " + ftp_dvm_path + " -o " + temp_dir + "; bye'"
+    os.system(command)
+    return True
 
 
 def get_size(sftp, ftp_dvm_path):
@@ -22,6 +29,7 @@ def get_file(sftp, ftp_dvm_path, temp_dir):
         temp_dir += file[-1]
     else:
         temp_dir = temp_dir + "/" + file[-1]
+
     result = sftp.sftp_client.get(ftp_dvm_path, temp_dir)
     return result
 
@@ -55,6 +63,9 @@ def main():
   elif action == "size":
       sftp = connect(ftp_user, ftp_password, ftp_host)
       result = get_size(sftp, ftp_dvm_path)
+      module.exit_json(changed=False, size=result)
+  elif action == "lftp":
+      result = get_file_lftp(ftp_user, ftp_password, ftp_host, ftp_dvm_path, temp_dir)
       module.exit_json(changed=False, size=result)
   else:
       msg = "No set action"
