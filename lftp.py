@@ -13,7 +13,7 @@ def connect(ftp_user, ftp_password, ftp_host):
 
 
 def get_file_lftp(ftp_user, ftp_password, ftp_host, ftp_dvm_path, temp_dir):
-    command = "lftp sftp://" + ftp_user + ":" + ftp_password + "@" + ftp_host + " -e " + "'get " + ftp_dvm_path + " -o " + temp_dir + "; bye'"
+    command = "lftp sftp://" + ftp_user + ":" + ftp_password + "@" + ftp_host + " -e " + "'pget -n 5 " + ftp_dvm_path + " -o " + temp_dir + "; bye'"
     os.system(command)
     return True
 

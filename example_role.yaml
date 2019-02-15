@@ -1,0 +1,57 @@
+---
+- name: Create temporary dirs
+  file:
+    path: "{{ item }}"
+    state: directory
+  with_items:
+    - "{{ temp_dir }}"
+    - "{{ dvm_dir }}"
+
+- name: Collection tmp availability size
+  shell: "df -B1 /tmp | awk 'NR==2{print $4}'"
+  changed_when: False
+  register: tmp_size
+  tags:
+    - skip_ansible_lint
+
+- name: Get archive size
+  sftp:
+    ftp_user: "{{ ftp_user }}"
+    ftp_password: "{{ ftp_password }}"
+    ftp_host: "{{ ftp_host }}"
+    ftp_dvm_path: "{{ ftp_dvm_path }}"
+    action: size
+  register: size_archive
+
+- name: Print archive size and free size
+  debug:
+    msg: "Archive size - {{ size_archive.size }}, Free space - {{ tmp_size.stdout }}"
+    verbosity: 2
+
+- name: Check free space
+  assert:
+    that:
+      -  tmp_size.stdout | int * 1 > size_archive.size | int * 2
+    msg: "No free space for Download"
+
+- name: Download DVM archive using sftp
+  sftp:
+    ftp_user: "{{ ftp_user }}"
+    ftp_password: "{{ ftp_password }}"
+    ftp_host: "{{ ftp_host }}"
+    ftp_dvm_path: "{{ ftp_dvm_path }}"
+    temp_dir: "{{ temp_dir }}"
+    action: lftp
+
+- name: Set archive absolute path
+  set_fact:
+    archive_absolute_path: "{{ temp_dir  }}/{{ ftp_dvm_path | basename }}"
+
+- name: Check that archive exist
+  stat:
+    path: "{{ archive_absolute_path }}"
+  register: archive_absolute_stat
+
+- debug:
+    msg="archive not found"
+  when: not archive_absolute_stat.stat.exists
